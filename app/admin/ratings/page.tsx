@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { connection } from 'next/server'
 
-export const instant = false
 interface VoteRecord {
   id: string
   vote_type: string
