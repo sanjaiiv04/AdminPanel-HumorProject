@@ -157,17 +157,37 @@ export default function AdminMediaPage() {
               className="w-full rounded-xl border-2 border-[var(--color-ink)] px-3 py-2 text-sm font-medium"
             />
           </div>
+
           <div className="flex-1">
             <label className="mb-1 block text-xs font-bold uppercase text-[var(--color-muted)]">
               Image File
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="w-full text-sm font-medium"
-            />
+            <div className="flex items-center gap-3">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                id="media-image-upload"
+                accept="image/*"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+
+              {/* Custom button label matching the theme */}
+              <label
+                htmlFor="media-image-upload"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface)] px-4 py-2 font-display text-xs font-extrabold uppercase text-[var(--color-ink)] shadow-xs transition-all hover:bg-gray-100 active:translate-y-0.5"
+              >
+                <span>📁</span>
+                <span>{selectedFile ? 'Change File' : 'Choose File'}</span>
+              </label>
+
+              {/* Selected filename string */}
+              <span className="truncate text-xs font-bold text-[var(--color-ink)] max-w-[180px]">
+                {selectedFile ? selectedFile.name : 'No file chosen'}
+              </span>
+            </div>
           </div>
+
           <button
             type="submit"
             disabled={uploading}
