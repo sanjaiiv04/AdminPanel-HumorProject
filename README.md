@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Admin Panel: An extension of the Caption Rating Application 
+Design an interface showing off interesting statistics from the data. Be creative in the data you choose to highlight and the way in which you highlight it.
 
-## Getting Started
+Also create a way to manage users/profiles, AI generated media, and upvotes/downvotes/ratings.
 
-First, run the development server:
+You should be able to:
+- **READ** users/profiles
+- **CREATE/READ/UPDATE/DELETE** AI generated media
+- **READ** upvotes/downvotes/ratings
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Important**: Make sure every route in your admin area is behind a Google login wall. Only allow users with a specific database field (like profiles.is_superadmin==TRUE). If you don’t do this step, you’ll expose your database to the entire internet.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Question**: But wait, if this specific database field is required to use your own admin area, won’t you be locked out? Given the tools and access you currently have at your disposal, how could you solve this problem?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Turn off Vercel “deployment protection” so that you can view your page in Incognito Mode.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Submit the latest commit-specific URL of your two Vercel apps (AI-generated media creation and rating app and your admin area app) in the “Submissions” section.
