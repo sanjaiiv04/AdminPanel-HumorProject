@@ -1,12 +1,10 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  experimental: {
-    agentFeedback: true,
-  },
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Supports path tracing when living in a subfolder inside a monorepo
+  outputFileTracingRoot: path.join(import.meta.dirname ?? process.cwd(), "../"),
+
   turbopack: {
     rules: {
       "*.css": {
