@@ -13,8 +13,7 @@ function LoginContent() {
   useEffect(() => {
     if (errorParam) {
       const supabase = createClient()
-      supabase.auth.signOut()
-      setLoading(false)
+      void supabase.auth.signOut()
     }
   }, [errorParam])
 
@@ -24,7 +23,7 @@ function LoginContent() {
       const supabase = createClient()
 
       // Force account picker so users can select a different Google account if needed
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -33,6 +32,7 @@ function LoginContent() {
           },
         },
       })
+      if (error) throw error
     } catch (error) {
       console.error('Login error:', error)
       setLoading(false)
