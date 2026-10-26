@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ] },
     { label: 'Models & signup access', items: [
       { label: 'Models & providers', href: '/admin/models-providers' },
-      { label: 'Allowed signup domains' }, { label: 'Whitelisted emails' },
+      { label: 'Signup access', href: '/admin/signup-access' },
     ] },
   ] satisfies { label: string; items: { label: string; href?: string }[] }[]
 

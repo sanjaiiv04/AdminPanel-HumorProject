@@ -22,8 +22,10 @@ registerHooks({
 })
 const actions = await import('../app/admin/catalog-actions.ts')
 const contentActions = await import('../app/admin/content-actions.ts')
+const signupActions = await import('../app/admin/signup-access/actions.ts')
 const { validateProvider, validateModel, validateMix, initialMutationState } = await import('../lib/admin/catalog-validation.ts')
 const { validateTerm, validateGenerationExample } = await import('../lib/admin/content-validation.ts')
+const { validateSignupEntry, signupHref } = await import('../lib/admin/signup-access.ts')
 
 function form(values) {
   const result = new FormData()
@@ -243,4 +245,98 @@ test('concurrent linked-record removal returns a recoverable example error', asy
   setup({ databaseError: { code: '23503' } })
   const result = await contentActions.saveGenerationExample(initialMutationState, exampleForm({ prompt_chain_id: providerId }))
   assert.match(result.message, /linked chain or image changed/)
+})
+
+const domainForm = extra => form({ domain: '  Columbia.EDU  ', is_active: true, ...extra })
+const emailForm = extra => form({ email: '  Student+Class@Columbia.EDU  ', note: '', is_active: true, ...extra })
+
+test('signup domains normalize case while preserving exact subdomain scope', () => {
+  assert.deepEqual(validateSignupEntry('domains', domainForm()).values, { domain: 'columbia.edu', is_active: true })
+  assert.equal(validateSignupEntry('domains', domainForm({ domain: 'cs.Columbia.edu' })).values.domain, 'cs.columbia.edu')
+  for (const domain of ['https://columbia.edu', '@columbia.edu', '*.columbia.edu', 'student@columbia.edu', 'localhost', 'columbia.edu/path', 'columbia.edu.', '-bad.edu', 'bad-.edu', `${'a'.repeat(64)}.edu`, 'a'.repeat(254)]) {
+    assert.ok(validateSignupEntry('domains', domainForm({ domain })).errors.domain, domain)
+  }
+})
+
+test('whitelisted email normalization preserves plus addressing and clears optional notes', () => {
+  assert.deepEqual(validateSignupEntry('emails', emailForm()).values, { email: 'student+class@columbia.edu', is_active: true, note: null })
+  assert.equal(validateSignupEntry('emails', emailForm({ note: '  Approved for a course  ' })).values.note, 'Approved for a course')
+  assert.equal(validateSignupEntry('emails', emailForm({ is_active: false })).values.is_active, false)
+})
+
+test('email validation rejects malformed addresses and overlong values', () => {
+  for (const email of ['not-an-email', '@columbia.edu', 'student@', 'a@@columbia.edu', '.student@columbia.edu', 'student.@columbia.edu', 'a..b@columbia.edu', 'a b@columbia.edu', 'Student <student@columbia.edu>', 'student@localhost', `${'a'.repeat(65)}@columbia.edu`]) {
+    assert.ok(validateSignupEntry('emails', emailForm({ email })).errors.email, email)
+  }
+  assert.ok(validateSignupEntry('emails', emailForm({ note: 'x'.repeat(1001) })).errors.note)
+})
+
+test('signup hrefs keep tab selection while encoding pagination and notices', () => {
+  assert.equal(signupHref('emails', { page: '2' }), '/admin/signup-access?tab=emails&page=2')
+  assert.equal(signupHref('domains', { saved: '1' }), '/admin/signup-access?tab=domains&saved=1')
+})
+
+test('every signup mutation requires superadmin authorization', async () => {
+  for (const overrides of [{ user: null }, { admin: false }]) {
+    const state = setup(overrides)
+    for (const kind of ['domains', 'emails']) {
+      assert.equal((await signupActions.saveSignupEntry(kind, initialMutationState, kind === 'domains' ? domainForm() : emailForm())).status, 'error')
+      assert.equal((await signupActions.deleteSignupEntry(kind, initialMutationState, form({ ...identity, confirm_delete: true }))).status, 'error')
+    }
+    assert.equal(state.writes.length, 0)
+  }
+})
+
+test('signup creation writes only normalized list fields to the correct table', async () => {
+  for (const [kind, table, fields] of [['domains', 'allowed_signup_domains', domainForm({ email: 'ignored@example.edu', is_superadmin: true })], ['emails', 'whitelisted_email_addresses', emailForm({ domain: 'ignored.edu', is_superadmin: true })]]) {
+    const state = setup()
+    await assert.rejects(signupActions.saveSignupEntry(kind, initialMutationState, fields), new RegExp(`REDIRECT:/admin/signup-access\\?tab=${kind}&saved=1`))
+    assert.equal(state.writes[0].table, table)
+    assert.equal(state.writes[0].values.is_superadmin, undefined)
+    assert.equal(state.writes[0].values[kind === 'domains' ? 'domain' : 'email'], kind === 'domains' ? 'columbia.edu' : 'student+class@columbia.edu')
+    assert.equal(state.writes[0].values[kind === 'domains' ? 'email' : 'domain'], undefined)
+  }
+})
+
+test('duplicate signup entries and database validation errors are recoverable', async () => {
+  for (const kind of ['domains', 'emails']) {
+    setup({ databaseError: { code: '23505' } })
+    const result = await signupActions.saveSignupEntry(kind, initialMutationState, kind === 'domains' ? domainForm() : emailForm())
+    assert.match(result.message, /already in the list/)
+  }
+  setup({ databaseError: { code: '23514' } })
+  assert.match((await signupActions.saveSignupEntry('domains', initialMutationState, domainForm())).message, /database format/)
+})
+
+test('signup edits and deletions protect the original record version', async () => {
+  const state = setup()
+  await assert.rejects(signupActions.saveSignupEntry('emails', initialMutationState, emailForm({ ...identity, is_active: false })), /REDIRECT:/)
+  assert.deepEqual(state.writes[0].filters, [['id', recordId], ['updated_at', updatedAt]])
+  assert.equal(state.writes[0].values.is_active, false)
+  setup({ stale: true })
+  assert.match((await signupActions.saveSignupEntry('domains', initialMutationState, domainForm(identity))).message, /changed or was removed/)
+  assert.match((await signupActions.deleteSignupEntry('emails', initialMutationState, form({ ...identity, confirm_delete: true }))).message, /changed or was removed/)
+})
+
+test('signup deletions require confirmation and never delete user accounts', async () => {
+  for (const [kind, table] of [['domains', 'allowed_signup_domains'], ['emails', 'whitelisted_email_addresses']]) {
+    const state = setup()
+    assert.equal((await signupActions.deleteSignupEntry(kind, initialMutationState, form(identity))).status, 'error')
+    assert.equal(state.writes.length, 0)
+    await assert.rejects(signupActions.deleteSignupEntry(kind, initialMutationState, form({ ...identity, confirm_delete: true })), /REDIRECT:/)
+    assert.equal(state.writes.length, 1)
+    assert.equal(state.writes[0].table, table)
+    assert.equal(state.writes[0].operation, 'delete')
+    assert.deepEqual(state.writes[0].filters, [['id', recordId], ['updated_at', updatedAt]])
+  }
+})
+
+test('forged signup kinds, invalid entries, and malformed identities cannot write', async () => {
+  const state = setup()
+  assert.equal((await signupActions.saveSignupEntry('profiles', initialMutationState, domainForm())).status, 'error')
+  assert.equal((await signupActions.deleteSignupEntry('profiles', initialMutationState, form({ ...identity, confirm_delete: true }))).status, 'error')
+  assert.equal((await signupActions.saveSignupEntry('domains', initialMutationState, domainForm({ domain: '*.edu' }))).status, 'error')
+  assert.equal((await signupActions.saveSignupEntry('emails', initialMutationState, emailForm({ email: '' }))).status, 'error')
+  assert.equal((await signupActions.deleteSignupEntry('domains', initialMutationState, form({ id: 'wrong', confirm_delete: true }))).status, 'error')
+  assert.equal(state.writes.length, 0)
 })
