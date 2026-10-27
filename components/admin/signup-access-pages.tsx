@@ -12,7 +12,7 @@ const linkClass = 'text-sm font-bold underline underline-offset-2'
 const LoadingSignup = () => <div role="status" className="rounded-xl bg-white p-6 text-sm">Loading signup lists…</div>
 
 function EnforcementNotice() {
-  return <AdminNotice title="Additive signup access">Columbia UNI emails remain allowed. After the signup-access migration and CapRate update are deployed, active domains and exact whitelisted emails also qualify at signup and sign-in. Removing an entry affects future sign-ins; it does not revoke existing sessions. These lists never grant admin access.</AdminNotice>
+  return <AdminNotice title="Signup access policy">With the list-only migration and current CapRate update deployed, ordinary users must match an active domain or exact whitelisted email, including Columbia users. Existing superadmins retain access. Removing an entry affects future sign-ins; it does not revoke existing sessions. These lists never grant admin access.</AdminNotice>
 }
 
 function QueryError({ message, href }: { message: string; href: string }) {
@@ -69,7 +69,7 @@ async function SignupAccessEditor({ params, mode }: { params: Promise<{ kind: st
   }
   return <div className="space-y-6">
     <Link href={signupHref(kind)} className={linkClass}>← Back to {definition.title.toLowerCase()}</Link>
-    <AdminPageHeader title={`${mode === 'new' ? 'Add' : mode === 'delete' ? 'Delete' : 'Edit'} ${definition.noun}`} description={mode === 'delete' ? 'Review and confirm removal from this signup list.' : 'Active entries provide an additional way to qualify for CapRate signup and sign-in.'} />
+    <AdminPageHeader title={`${mode === 'new' ? 'Add' : mode === 'delete' ? 'Delete' : 'Edit'} ${definition.noun}`} description={mode === 'delete' ? 'Review and confirm removal from this signup list.' : 'Active entries allow matching ordinary users to sign up and sign in to CapRate.'} />
     {entry && <AdminDetails title="Entry details" fields={[
       { label: 'ID', value: entry.id },
       { label: 'Created (UTC)', value: new Date(entry.created_at).toLocaleString('en-US', { timeZone: 'UTC' }) },

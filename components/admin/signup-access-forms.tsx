@@ -42,7 +42,7 @@ export function DeleteSignupAccessForm({ kind, entry }: { kind: SignupKind; entr
     <RecordIdentity record={entry} />
     <MutationFeedback state={state} />
     <p className="break-words text-sm">Permanently remove <strong>{entry[definition.field]}</strong> from {kind === 'domains' ? 'allowed domains' : 'whitelisted emails'}?</p>
-    <p className="text-sm text-[var(--color-muted)]">This cannot be undone. It removes this additional signup/sign-in allowance. Columbia UNI access and other matching active entries still apply. Existing accounts and sessions are not deleted.</p>
+    <p className="text-sm text-[var(--color-muted)]">This cannot be undone. It removes this signup/sign-in allowance. Other matching active entries and existing superadmin access still apply. Existing accounts and sessions are not deleted.</p>
     <label className="flex items-center gap-3 text-sm font-bold"><input name="confirm_delete" type="checkbox" required checked={confirmed} onChange={event => setConfirmed(event.target.checked)} disabled={pending} className="h-4 w-4" />I confirm removing this entry.</label>
     <div className="flex flex-wrap items-center gap-4"><button type="submit" disabled={pending || !confirmed} className={`${buttonClass} bg-rose-100 text-rose-800`}>{pending ? 'Removing…' : `Remove ${definition.noun}`}</button><Link href={signupHref(kind)} className="text-sm font-bold underline">Cancel</Link></div>
   </form>
