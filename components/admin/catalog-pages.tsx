@@ -113,7 +113,7 @@ async function CatalogEditor({ kind, params, deleting = false }: { kind: Catalog
 
 export function CatalogListPage({ kind, searchParams }: { kind: CatalogKind; searchParams: ResourceSearchParams }) {
   return <div className="space-y-6">
-    <AdminPageHeader title={`LLM ${kind}`} description={`Manage ${kind === 'providers' ? 'provider names, identifiers, and availability' : 'model identifiers, providers, and image support'}. These settings will control generation once configuration-based execution is connected.`} />
+    <AdminPageHeader title={`LLM ${kind}`} description={`Manage ${kind === 'providers' ? 'provider names, identifiers, and availability' : 'model identifiers, providers, and image support'}. The updated CapRate generator uses active Google/Gemini models and providers; other providers are not executable yet.`} />
     <Suspense fallback={<LoadingCatalog />}><CatalogList kind={kind} searchParams={searchParams} /></Suspense>
   </div>
 }
@@ -131,7 +131,7 @@ async function CombinedCatalog({ searchParams }: { searchParams: ResourceSearchP
 
 export function ModelsProvidersPage({ searchParams }: { searchParams: ResourceSearchParams }) {
   return <div className="space-y-6">
-    <AdminPageHeader title="Models & providers" description="Manage model settings and their providers in one place. Generation still uses its current model until configuration-based execution is connected." />
+    <AdminPageHeader title="Models & providers" description="Manage model settings and their providers in one place. The updated CapRate generator reads the model assigned to each chain step. Only active Google/Gemini configurations can execute." />
     <Suspense fallback={<LoadingCatalog />}><CombinedCatalog searchParams={searchParams} /></Suspense>
   </div>
 }
@@ -171,7 +171,7 @@ async function ChainMixList({ searchParams }: { searchParams: ResourceSearchPara
 export function ChainMixPage({ searchParams }: { searchParams: ResourceSearchParams }) {
   return <div className="space-y-6">
     <AdminPageHeader title="Prompt chain mix" description="Set relative weights and enable or disable chains. Among eligible chains, weight 2 is selected twice as often as weight 1. Weights do not need to add up to 100." />
-    <p className="text-sm text-[var(--color-muted)]">These settings will take effect after configuration-based execution is connected. Enabled chains must also have active models and providers.</p>
+    <p className="text-sm text-[var(--color-muted)]">The updated CapRate generator chooses among enabled, active chains with 1–4 executable steps using these weights. Every step must use an active Google/Gemini model and provider, with image support when required. Changes apply to new requests after deploying the CapRate update.</p>
     <Suspense fallback={<LoadingCatalog />}><ChainMixList searchParams={searchParams} /></Suspense>
   </div>
 }

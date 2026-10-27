@@ -139,6 +139,7 @@ async function ResourceDetail({ resource, params }: { resource: ResourceKey; par
     <AdminDetails title={typeof row.name === 'string' ? row.name : definition.singular} fields={definition.details.map(field => ({
       label: field.label, wide: field.wide, value: <ResourceFieldValue row={row} field={field} />,
     }))} />
+    {resource === 'prompt-chain-steps' && <Link href={`/admin/prompt-chain-steps/${id}/edit`} className="inline-block rounded-xl border-2 bg-[var(--color-skip)] px-4 py-3 text-sm font-bold">Edit prompt and step settings</Link>}
     {definition.children && <Link href={`/admin/${definition.children.resource}?${new URLSearchParams({ [definition.children.parameter]: id })}`} className="inline-block rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-skip)] px-4 py-3 text-sm font-bold">{definition.children.label}</Link>}
   </div>
 }

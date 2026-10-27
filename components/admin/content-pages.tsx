@@ -94,7 +94,7 @@ async function ContentEditor({ kind, params, deleting }: { kind: ContentKind; pa
 export function ContentListPage({ kind, searchParams }: { kind: ContentKind; searchParams: ResourceSearchParams }) {
   return <div className="space-y-6">
     <AdminPageHeader title={titleFor(kind)} description={kind === 'terms' ? 'Manage vocabulary, definitions, and example usage for caption prompts.' : 'Curate positive and negative caption examples for all chains or a specific chain.'} />
-    <p className="text-sm text-[var(--color-muted)]">This content will be used after configuration-based prompting is connected. The current generator still uses its existing community-rated examples.</p>
+    <p className="text-sm text-[var(--color-muted)]">The updated CapRate generator uses active content when a chain step enables Terms or Curated examples. Open Chain steps, choose a step, then edit its settings. Example captions and context are included; linked example images remain references. Up to 20 terms and the 10 newest matching examples are used.</p>
     <Suspense fallback={<LoadingContent />}><ContentList kind={kind} searchParams={searchParams} /></Suspense>
   </div>
 }

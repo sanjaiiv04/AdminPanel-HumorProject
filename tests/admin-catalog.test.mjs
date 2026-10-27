@@ -23,6 +23,7 @@ registerHooks({
 const actions = await import('../app/admin/catalog-actions.ts')
 const contentActions = await import('../app/admin/content-actions.ts')
 const signupActions = await import('../app/admin/signup-access/actions.ts')
+const { saveStepSettings } = await import('../app/admin/prompt-chain-steps/actions.ts')
 const { validateProvider, validateModel, validateMix, initialMutationState } = await import('../lib/admin/catalog-validation.ts')
 const { validateTerm, validateGenerationExample } = await import('../lib/admin/content-validation.ts')
 const { validateSignupEntry, signupHref } = await import('../lib/admin/signup-access.ts')
@@ -41,13 +42,14 @@ function setup(overrides = {}) {
       const query = { table, operation: 'select', filters: [], values: null }
       const builder = {
         select() { return builder },
+        overrideTypes() { return builder },
         eq(column, value) { query.filters.push([column, value]); return builder },
         update(values) { query.operation = 'update'; query.values = values; return builder },
         insert(values) { query.operation = 'insert'; query.values = values; return builder },
         delete() { query.operation = 'delete'; return builder },
         async single() { return { data: { is_superadmin: state.admin }, error: null } },
         async maybeSingle() {
-          if (query.operation === 'select') return { data: state.providerExists && !state.missingReferences.includes(table) ? { id: providerId } : null, error: null }
+          if (query.operation === 'select') return { data: state.providerExists && !state.missingReferences.includes(table) ? { id: providerId, model_identifier: 'gemini-test', is_active: true, supports_images: true, provider: { slug: 'google', is_active: true } } : null, error: null }
           state.writes.push(query)
           return { data: state.stale || state.databaseError ? null : { id: recordId }, error: state.databaseError }
         },
@@ -339,4 +341,19 @@ test('forged signup kinds, invalid entries, and malformed identities cannot writ
   assert.equal((await signupActions.saveSignupEntry('emails', initialMutationState, emailForm({ email: '' }))).status, 'error')
   assert.equal((await signupActions.deleteSignupEntry('domains', initialMutationState, form({ id: 'wrong', confirm_delete: true }))).status, 'error')
   assert.equal(state.writes.length, 0)
+})
+
+test('step settings reject non-admins, invalid prompts, missing models, and stale saves',async()=>{
+ const valid={id:recordId,updated_at:updatedAt,llm_model_id:providerId,prompt_template:'Write a caption.',use_terms:true}
+ for(const settings of [{user:null},{admin:false}]){
+  const state=setup(settings);assert.equal((await saveStepSettings(initialMutationState,form(valid))).status,'error');assert.equal(state.writes.length,0)
+ }
+ setup();assert.equal((await saveStepSettings(initialMutationState,form({...valid,prompt_template:''}))).status,'error')
+ setup({providerExists:false});assert.equal((await saveStepSettings(initialMutationState,form(valid))).status,'error')
+ setup({stale:true});assert.match((await saveStepSettings(initialMutationState,form(valid))).message,/changed or was removed/)
+ const state=setup()
+ await assert.rejects(saveStepSettings(initialMutationState,form({...valid,prompt_chain_id:'forged',position:'999'})),/REDIRECT:/)
+ assert.equal(state.writes[0].values.use_terms,true);assert.equal(state.writes[0].values.include_image,false)
+ assert.equal(state.writes[0].values.position,undefined);assert.equal(state.writes[0].values.prompt_chain_id,undefined)
+ assert.deepEqual(state.writes[0].filters,[['id',recordId],['updated_at',updatedAt]])
 })
